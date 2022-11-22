@@ -10,8 +10,11 @@ library(dplyr)
 library(data.table)
 library(dtplyr)
 
+source("R/fct_help_genres.R")
+source("R/fct_help_dev_names.R")
+
 # 1. Dados de generos ----
-dados <- read.table("data-raw/steam-data/applicationGenres.csv", col.names = paste("V",1:25), fill = T, sep = ",")
+dados <- read.table("data-raw/steam-data/db-0/applicationGenres.csv", col.names = paste("V",1:25), fill = T, sep = ",")
 dados <- dados[,which(!is.na(dados[1,]))]
 
 ## 1.1.1 Organizando os nomes das colunas
@@ -19,16 +22,6 @@ colnames(dados) <- c("ID", "Categoria1", "Categoria2", "Categoria3", "Categoria4
                      "Categoria5", "Categoria6", "Categoria7", "Categoria8")
 
 ## Vetor com todos os generos que aparecem na tabela
-
-func_get_all_genres <- function(dados){
-  all_cols <- c("")
-  len_dados <- length(dados)
-  for(i in 2:len_dados){
-    unique_col <- unique(dados[,i])
-    all_cols <- unique(c(all_cols, unique_col))
-  }
-  all_cols[all_cols != ""]
-}
 
 all_genres <- sort(func_get_all_genres(dados))
 
@@ -51,17 +44,6 @@ for(i in 1:length(all_genres)){
 
 ## Escrevendo novo dataframe
 # data.table::fwrite(df, "data-raw/generos_tratados.csv")
-
-func_count_genres <- function(df){
-  colnames_df <- colnames(df)
-  df_counts <- as.data.frame(colnames_df[colnames_df != 'ID']) |> 
-    dplyr::rename(genres = 1)
-  df_counts$count <- NA
-  for(i in 2:length(df)){
-    df_counts[i-1, 2] <- sum(df[,i])
-  }
-  df_counts
-}
 
 ## 1.1. Tabela de contagens para cada gênero ----
 df_counts <- func_count_genres(df)
@@ -94,11 +76,11 @@ df_counts_last10 <- df_counts |>
 df_sample <- df |> 
   dplyr::sample_n(size = 30)
 
-sum(df_sample[, "Action"] & df_sample[,4] == T)
-sum(df_double)
-df_sample[,3] == T
-df_sample[,4] == T
-df_sample[,2]
+# sum(df_sample[, "Action"] & df_sample[,4] == T)
+# sum(df_double)
+# df_sample[,3] == T
+# df_sample[,4] == T
+# df_sample[,2]
 
 top10_genres <- df_counts_top10 |> 
   dplyr::select(genres) |> 
@@ -147,7 +129,7 @@ df_devs <- func_organ_names(NULL, T)
 df_devs <- func_clean_dev_names(df_devs)
 
 library(dplyr)
-df_all_devs_count <- df_all_words |> 
+df_all_devs_count <- df_devs |> 
   dplyr::group_by(devs) |> 
   dplyr::summarize(count = dplyr::n()) |> 
   dplyr::ungroup() |> 
@@ -164,3 +146,181 @@ fig_top10_dev
 # vetor_ex <- c("2K Australia", "2K Boston", "2K China", "Alexey Bokulev", "Alexey Davydov", "CAPCOM CO LTD", "Capcom Game Studio Vancouver", "Capcom Game Studio Vancouver Inc")
 # 
 # c("2K", "2K", "2K", "Alexey Bokulev", "Alexey Davydov", "CAPCOM", "Capcom", "Capcom")
+
+# 3. Dados de nova base (dados de jogos) ----
+## https://www.kaggle.com/datasets/fronkongames/steam-games-dataset
+
+## Lendo tabelas csv
+df_games <- data.table::fread("data-raw/steam-data/db-1/games.csv", sep = ',')
+
+# ## Lendo tabela json
+# json_list <- jsonlite::read_json("data-raw/steam-data/db-1/games.json")
+# 
+# ## Organizando json em formato dataframe
+# df_json_df <- tidyr::as_tibble(json_list)
+# 
+# rownames_json <- c("ID", names(df_json_df$`20200`))
+# 
+# df_games_json <- df_json_df |> 
+#   dplyr::as_tibble() |> 
+#   tibble::rownames_to_column() |>   
+#   tidyr::pivot_longer(-rowname) |>  
+#   tidyr::pivot_wider(names_from=rowname, values_from=value)  |> 
+#   dplyr::mutate(across(everything(), as.character)) |> 
+#   magrittr::set_colnames(rownames_json)
+# 
+# ## Comparando tabelas
+# json_cols <- stringr::str_sort(rownames_json)
+# csv_cols <- stringr::str_sort(names(df))
+# 
+# l <- tibble::lst(json_cols, csv_cols)
+# cols_compare <- data.frame(lapply(l, `length<-`, max(lengths(l))))
+# 
+# detail_descrip <- as.character(df_games_json[1,7])
+# about <- as.character(df_games_json[1,8])
+# short_descrip <- as.character(df_games_json[1,9])
+
+## Após a análise exploratória, foi visto que não precisamos dos dados de descrição extras presentes no arquivo json, usaremos então o df no formato csv
+## Caso queiramos uma descrição resumida, podemos pegar do arquivo json através da coluna short_description
+
+df_games$Release.date <- lubridate::mdy(df_games$Release.date)
+
+## Colunas que podem ser interessantes:
+
+## Dashboard --
+## Data (fazer um gráfico de lançamento por mês, avaliar lançamentos por ano, comparar lançamentos nos anos)
+## Mostrar jogos de acordo com linguagem escolhida (supported + full audio)
+## Trazer um resumo do jogo ao clicar nele (imagem, data de lançamento, preço, número de jogadores,
+## pico de jogadores no último dia, linguagens, plataformas Win,Lin,Mac, metacritic score, userscore, votos positivos e negativos)
+
+## Análise --
+## Pico de usuários (comparar com jogos free ou não)
+## Preço, fazer um comparativo de preços, comparativo de preços médio por ano, verificar número de jogadores
+## Analise de requerimento de idade para jogos
+## Analisar idiomas mais usados (supported, legenda e full audio, dublagem)
+
+
+## 3.0 Dados gerais da base (atualizados base 2022) ----
+summary(df_games)
+
+## 3.1 Dados de generos (atualizados base 2022) ----
+df_generos <- as.data.frame(df_games$Genres)
+colnames(df_generos) <- "Genres"
+
+## Separando a coluna pelo separador ','
+df_generos_org <- df_generos |> 
+  dplyr::mutate(Genres = strsplit(Genres, ","))
+
+## Dessa forma consigo a contagem mais rapidamente
+
+# max(lengths(df_generos_org$Genres))
+df_generos_org_count <- df_generos_org |>  
+  tidyr::unnest(Genres) |>
+  dplyr::group_by(Genres) |> 
+  dplyr::summarise(count = dplyr::n()) |> 
+  dplyr::ungroup()
+
+## 3.2 Dados de  precos (Price) ----
+df_games_price <- df_games |> 
+  dplyr::select(AppID, Name, Peak.CCU, Price, Categories, Genres, Tags) |> 
+  # dplyr::slice_sample(n = 1000) |> 
+  dplyr::filter()
+
+nrow(df_games_price[df_games_price$Categories == "", ])
+## 1738 linhas em branco
+nrow(df_games_price[df_games_price$Genres == "", ])
+## 2646 linhas em branco
+nrow(df_games_price[df_games_price$Tags == "", ])
+## 8929 linhas em branco
+
+## Removendo os utilitários (programas)
+
+df_games_price <- df_games_price |> 
+  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Utilit"))) |>
+  dplyr::mutate(Price_numb = as.numeric(Price))
+
+df_games_price <- df_games_price |> 
+  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Video Production"))) |> 
+  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Modeling")))
+
+df_games_sim <- df_games_price |> 
+  dplyr::filter(stringr::str_detect(Genres, pattern = "Simulation"))
+
+## Testando se o número de unnest estava correto
+# sum = 0
+# for(i in 1:nrow(df_generos_org)){
+#   # if(is.integer(df_generos_org[1,i]) && length(df_generos_org[i,1]) == 0)
+#   sum = sum + lengths(df_generos_org[i,1])
+# }
+# 
+# ## Para dar certo precisaria que todas as linhas possuíssem o mesmo número de elementos
+# df_gen_aux <- cbind(df_generos_org_test[1], t(data.frame(df_generos_org_test$Genres)))
+# 
+## Forma muito mais lenta, mas que faz automaticamente
+## Precisaria adaptar a saída, além de que demorou tanto tempo que o sistema finalizou o processo (mais de algumas horas, vou manter o uso da versão acima)
+# 
+# df_generos_un <- df_generos_org_test |>
+#   tidyr::unnest_wider(Genres)
+# 
+# df_generos_org_count_test <- df_generos_org_test |>  
+#   tidyr::unnest(Genres) |>
+#   dplyr::group_by(Genres) |> 
+#   dplyr::summarise(count = dplyr::n()) |> 
+#   dplyr::ungroup()
+
+## 3.3 Exploração inicial de variáveis ----
+### 3.3.1. Idade recomendada (Required Age) ----
+
+### Pelo summary geral já pude visualizar esse não é um dado bem preenchido
+
+summary(df_games$`Required age`)
+
+# Min.    1st Qu.  Median  Mean    3rd Qu. Max. 
+# 0.0000  0.0000   0.0000  0.3624  0.0000  21.0000 
+
+colnames_df_games <- as.data.frame(colnames(df_games))
+
+### 3.3.2. Linguagens suportadas (Supported Languages) ----
+
+summary(df_games$`Supported languages`)
+
+skimr::skim(df_games$`Supported languages`)
+
+df_games_language <- as.data.frame(df_games[, `Supported languages`]) |> 
+  dplyr::rename(Sup_languages = 1)
+
+df_games_language$language <- gsub('\\[', '', df_games_language$Sup_languages)
+df_games_language$language <- gsub('\\]', '', df_games_language$language)
+df_games_language$language <- gsub("\\'", '', df_games_language$language)
+df_games_language$language <- gsub('\\"', '', df_games_language$language)
+
+## Separa em df de mais de um elemento quando possui mais de um país
+# nmax <- max(stringr::str_count(df_games_language$language, "\\,")) + 1
+# nmax <- max(stringr::str_count(df_games_language$Sup_languages, "\\,")) + 1
+nmax <- 1
+for(i in 1:nrow(df_games_language)){
+  max_line <- max(stringr::str_count(df_games_language[i, 2], "\\,")) + 1
+  if(max_line > nmax){
+    nmax <- max_line
+    nmax_line <- i
+  }
+}
+stringr::str_count(df_games_language[62736, 2], "\\,")
+
+## Corrigindo idioma de jogo problemático
+df_games[63064, ]
+
+## Kaboom! Corrigido
+df_games[62736, 10] <- "'All languages'"
+df_games_language[62736, 2] <- "'All languages'"
+
+## Cube Loop alterado
+df_games[63064, 10] <- "'All languages'"
+df_games_language[63064, 2] <- "'All languages'"
+
+df_games_language_split <- df_games_language %>%
+  dplyr::select(language) |> 
+  tidyr::separate(language, into=paste0("idioma_", seq_len(nmax)), sep =  '\\,', fill = "right")
+
+## Como fazer a seleção por idioma, se um jogo pode ter mais de 29 idiomas
+## um simples %in% resolveria dentro de um shiny? -- PERFORMANCE
