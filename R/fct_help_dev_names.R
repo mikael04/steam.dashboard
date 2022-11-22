@@ -13,7 +13,7 @@
 
 func_organ_names <- function(df, read_df){
   if(read_df){
-    df <- read.csv2("data-raw/steam-data/applicationDevelopers.csv", col.names = paste("V",1:15), fill = T, sep = ",")
+    df <- read.csv2("data-raw/steam-data/db-0/applicationDevelopers.csv", col.names = paste("V",1:15), fill = T, sep = ",")
     df <- df[,which(!is.na(df[1,]))]
     ## Removendo primeira coluna com "identificador"
     df <- df[,2:8]
@@ -92,7 +92,7 @@ func_clean_dev_names <- function(dev_names){
   df_all_words$devs <- stringr::str_to_title(df_all_words$devs)
   ## Limpando pontuações
   
-  df_all_words$devs <- str_replace_all(df_all_words$devs, "[:punct:]", "")
+  df_all_words$devs <- stringr::str_replace_all(df_all_words$devs, "[:punct:]", "")
   
   df_all_words
 }
