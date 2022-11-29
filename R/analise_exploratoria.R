@@ -183,7 +183,8 @@ df_games <- data.table::fread("data-raw/steam-data/db-1/games.csv", sep = ',')
 ## Após a análise exploratória, foi visto que não precisamos dos dados de descrição extras presentes no arquivo json, usaremos então o df no formato csv
 ## Caso queiramos uma descrição resumida, podemos pegar do arquivo json através da coluna short_description
 
-df_games$Release.date <- lubridate::mdy(df_games$Release.date)
+# df_games <- data.table::fread("data-raw/steam-data/db-1/games.csv", sep = ',')
+df_games$Release.date <- lubridate::mdy(df_games$`Release date`)
 
 ## Colunas que podem ser interessantes:
 
@@ -203,84 +204,23 @@ df_games$Release.date <- lubridate::mdy(df_games$Release.date)
 ## 3.0 Dados gerais da base (atualizados base 2022) ----
 summary(df_games)
 
-## 3.1 Dados de generos (atualizados base 2022) ----
-df_generos <- as.data.frame(df_games$Genres)
-colnames(df_generos) <- "Genres"
+## 3.1. Exploração de filtros ----
+### 3.1.1. Ano de lançamento ----
 
-## Separando a coluna pelo separador ','
-df_generos_org <- df_generos |> 
-  dplyr::mutate(Genres = strsplit(Genres, ","))
+summary(df_games$Release.date)
 
-## Dessa forma consigo a contagem mais rapidamente
+skimr::skim(df_games$Release.date)
 
-# max(lengths(df_generos_org$Genres))
-df_generos_org_count <- df_generos_org |>  
-  tidyr::unnest(Genres) |>
-  dplyr::group_by(Genres) |> 
-  dplyr::summarise(count = dplyr::n()) |> 
-  dplyr::ungroup()
+## Checando se o ID é único
+dplyr::n_distinct((df_games$AppID))
+## Sim, é único
 
-## 3.2 Dados de  precos (Price) ----
-df_games_price <- df_games |> 
-  dplyr::select(AppID, Name, Peak.CCU, Price, Categories, Genres, Tags) |> 
-  # dplyr::slice_sample(n = 1000) |> 
-  dplyr::filter()
+df_games_ano <- df_games |> 
+  dplyr::select(AppID, Release.date)
 
-nrow(df_games_price[df_games_price$Categories == "", ])
-## 1738 linhas em branco
-nrow(df_games_price[df_games_price$Genres == "", ])
-## 2646 linhas em branco
-nrow(df_games_price[df_games_price$Tags == "", ])
-## 8929 linhas em branco
+df_games_ano <- data.table::setDT(df_games_ano)[, Release_Yr := format(as.Date(Release.date), "%Y") ]
 
-## Removendo os utilitários (programas)
-
-df_games_price <- df_games_price |> 
-  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Utilit"))) |>
-  dplyr::mutate(Price_numb = as.numeric(Price))
-
-df_games_price <- df_games_price |> 
-  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Video Production"))) |> 
-  dplyr::filter(!if_any(everything(), ~ stringr::str_detect(., pattern = "Modeling")))
-
-df_games_sim <- df_games_price |> 
-  dplyr::filter(stringr::str_detect(Genres, pattern = "Simulation"))
-
-## Testando se o número de unnest estava correto
-# sum = 0
-# for(i in 1:nrow(df_generos_org)){
-#   # if(is.integer(df_generos_org[1,i]) && length(df_generos_org[i,1]) == 0)
-#   sum = sum + lengths(df_generos_org[i,1])
-# }
-# 
-# ## Para dar certo precisaria que todas as linhas possuíssem o mesmo número de elementos
-# df_gen_aux <- cbind(df_generos_org_test[1], t(data.frame(df_generos_org_test$Genres)))
-# 
-## Forma muito mais lenta, mas que faz automaticamente
-## Precisaria adaptar a saída, além de que demorou tanto tempo que o sistema finalizou o processo (mais de algumas horas, vou manter o uso da versão acima)
-# 
-# df_generos_un <- df_generos_org_test |>
-#   tidyr::unnest_wider(Genres)
-# 
-# df_generos_org_count_test <- df_generos_org_test |>  
-#   tidyr::unnest(Genres) |>
-#   dplyr::group_by(Genres) |> 
-#   dplyr::summarise(count = dplyr::n()) |> 
-#   dplyr::ungroup()
-
-## 3.3 Exploração inicial de variáveis ----
-### 3.3.1. Idade recomendada (Required Age) ----
-
-### Pelo summary geral já pude visualizar esse não é um dado bem preenchido
-
-summary(df_games$`Required age`)
-
-# Min.    1st Qu.  Median  Mean    3rd Qu. Max. 
-# 0.0000  0.0000   0.0000  0.3624  0.0000  21.0000 
-
-colnames_df_games <- as.data.frame(colnames(df_games))
-
-### 3.3.2. Linguagens suportadas (Supported Languages) ----
+### 3.1.2. Linguagens suportadas (Supported Languages) ----
 
 summary(df_games$`Supported languages`)
 
@@ -322,5 +262,146 @@ df_games_language_split <- df_games_language %>%
   dplyr::select(language) |> 
   tidyr::separate(language, into=paste0("idioma_", seq_len(nmax)), sep =  '\\,', fill = "right")
 
+
+### 3.1.3. Plataforma suportada (oficialmente) ----
+
+df_games_so <- df_games |> 
+  dplyr::select(AppID, Windows, Mac, Linux)
+
+# win_count <- sum(df_games_so$Windows)
+# mac_count <- sum(df_games_so$Mac)
+# lin_count <- sum(df_games_so$Linux)
+
+## 3.2 Exploração inicial de variáveis ----
+
+colnames_df_games <- as.data.frame(colnames(df_games))
+
+### 3.2.1. Categorias (atualizados base 2022) ----
+
+df_categ <- as.data.frame(df_games$Categories)
+colnames(df_categ) <- "Categories"
+
+## Separando a coluna pelo separador ','
+df_categ_org <- df_categ |> 
+  dplyr::mutate(Categories = strsplit(Categories, ","))
+
+## Separando a coluna pelo separador ','
+df_categ_org <- df_categ |> 
+  dplyr::mutate(Categories = strsplit(Categories, ","))
+
+## Dessa forma consigo a contagem mais rapidamente
+
+# max(lengths(df_categ_org$Categories))
+df_categ_org_count <- df_categ_org |>  
+  tidyr::unnest(Categories) |>
+  dplyr::group_by(Categories) |> 
+  dplyr::summarise(count = dplyr::n()) |> 
+  dplyr::ungroup()
+
+### 3.2.2. Generos (atualizados base 2022) ----
+df_generos <- as.data.frame(df_games$Genres)
+colnames(df_generos) <- "Genres"
+
+## Separando a coluna pelo separador ','
+df_generos_org <- df_generos |> 
+  dplyr::mutate(Genres = strsplit(Genres, ","))
+
+## Dessa forma consigo a contagem mais rapidamente
+
+# max(lengths(df_generos_org$Genres))
+df_generos_org_count <- df_generos_org |>  
+  tidyr::unnest(Genres) |>
+  dplyr::group_by(Genres) |> 
+  dplyr::summarise(count = dplyr::n()) |> 
+  dplyr::ungroup()
+
+
+### 3.2.3. Precos (Price) ----
+df_games_price <- df_games |> 
+  dplyr::select(AppID, Name, `Peak CCU`, Price, Categories, Genres, Tags) |> 
+  # dplyr::slice_sample(n = 1000) |> 
+  dplyr::filter()
+
+nrow(df_games_price[df_games_price$Categories == "", ])
+## 1738 linhas em branco
+nrow(df_games_price[df_games_price$Genres == "", ])
+## 2646 linhas em branco
+nrow(df_games_price[df_games_price$Tags == "", ])
+## 8929 linhas em branco
+
+## Removendo os utilitários (programas)
+
+df_games_price <- df_games_price |> 
+  dplyr::filter(!dplyr::if_any(everything(), ~ stringr::str_detect(., pattern = "Utilit"))) |>
+  dplyr::mutate(Price_numb = as.numeric(Price))
+
+df_games_price <- df_games_price |> 
+  dplyr::filter(!dplyr::if_any(everything(), ~ stringr::str_detect(., pattern = "Video Production"))) |> 
+  dplyr::filter(!dplyr::if_any(everything(), ~ stringr::str_detect(., pattern = "Modeling")))
+
+df_games_sim <- df_games_price |> 
+  dplyr::filter(stringr::str_detect(Genres, pattern = "Simulation"))
+
+## Testando se o número de unnest estava correto
+# sum = 0
+# for(i in 1:nrow(df_generos_org)){
+#   # if(is.integer(df_generos_org[1,i]) && length(df_generos_org[i,1]) == 0)
+#   sum = sum + lengths(df_generos_org[i,1])
+# }
+# 
+# ## Para dar certo precisaria que todas as linhas possuíssem o mesmo número de elementos
+# df_gen_aux <- cbind(df_generos_org_test[1], t(data.frame(df_generos_org_test$Genres)))
+# 
+## Forma muito mais lenta, mas que faz automaticamente
+## Precisaria adaptar a saída, além de que demorou tanto tempo que o sistema finalizou o processo (mais de algumas horas, vou manter o uso da versão acima)
+# 
+# df_generos_un <- df_generos_org_test |>
+#   tidyr::unnest_wider(Genres)
+# 
+# df_generos_org_count_test <- df_generos_org_test |>  
+#   tidyr::unnest(Genres) |>
+#   dplyr::group_by(Genres) |> 
+#   dplyr::summarise(count = dplyr::n()) |> 
+#   dplyr::ungroup()
+
 ## Como fazer a seleção por idioma, se um jogo pode ter mais de 29 idiomas
 ## um simples %in% resolveria dentro de um shiny? -- PERFORMANCE
+
+### 3.2.4. Número de jogadores estimados ----
+
+summary(df_games$`Estimated owners`)
+skimr::skim(df_games$`Estimated owners`)
+
+## Quantidade de categorias
+dplyr::n_distinct(df_games$`Estimated owners`)
+## Categorias
+unique(df_games$`Estimated owners`)
+
+### 3.2.X. Idade recomendada (Required Age) ----
+
+### Pelo summary geral já pude visualizar esse não é um dado bem preenchido
+
+summary(df_games$`Required age`)
+
+# Min.    1st Qu.  Median  Mean    3rd Qu. Max. 
+# 0.0000  0.0000   0.0000  0.3624  0.0000  21.0000 
+
+# Análises ----
+## Melhor escolha, primeiro fazer apenas todas as colunas interessantes como variáveis
+### depois posso pensar em adicionar filtros e começar a traçar análises mais profundas 
+### (contagens de combinações interessantes como Ano, faixa de preço, gênero, categoria)
+### a princípio filtros que parecem interessantes:
+### - 3.1.1 - ano de lançamento - OK - FILTRO
+### - 3.1.1.1 - Alguma análise sobre o mês?
+### - 3.1.2 - idioma suportado - OK - 29 idiomas, pode ser um FILTRO
+### - 3.1.3 - plataforma (win, mac, linux) - OK - FILTRO
+### - 3.2.1 - categorias - OK - 36 categorias
+### - 3.2.3 - gêneros - OK - 33 gêneros,  muitas categorias, será uma visualização, porém reagrupada
+### - 3.2.4 - preço - OK - Pode ser um filtro, de $9 até $34 - recategorizar, apresentar dado
+### - 3.2.x - idade recomendada - ANALISADA - Não há dados para criar gráficos, pouco preenchimento fora de 0
+
+### Adicionais
+### Versões de outros idiomas podem usar uma tradução de preço também, 
+### conforme moeda que o steam usa.
+
+### Adicionar uma opção para ver os gráficos de forma absoluta ou relativa
