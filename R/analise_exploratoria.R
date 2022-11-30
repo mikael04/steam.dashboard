@@ -211,12 +211,15 @@ summary(df_games$Release.date)
 
 skimr::skim(df_games$Release.date)
 
+max(df_games$`Release date`)
+max(df_games$`Release.date`)
+
 ## Checando se o ID é único
 dplyr::n_distinct((df_games$AppID))
 ## Sim, é único
 
 df_games_ano <- df_games |> 
-  dplyr::select(AppID, Release.date)
+  dplyr::select(AppID, Name, `Estimated owners`, `Price`, `Release date`, Release.date)
 
 df_games_ano <- data.table::setDT(df_games_ano)[, Release_Yr := format(as.Date(Release.date), "%Y") ]
 
@@ -234,6 +237,17 @@ df_games_language$language <- gsub('\\]', '', df_games_language$language)
 df_games_language$language <- gsub("\\'", '', df_games_language$language)
 df_games_language$language <- gsub('\\"', '', df_games_language$language)
 
+## Corrigindo idioma de jogo problemático
+df_games[63064, ]
+
+## Kaboom! Corrigido
+df_games[62736, 10] <- "'All languages'"
+df_games_language[62736, 2] <- "'All languages'"
+
+## Cube Loop alterado
+df_games[63064, 10] <- "'All languages'"
+df_games_language[63064, 2] <- "'All languages'"
+
 ## Separa em df de mais de um elemento quando possui mais de um país
 # nmax <- max(stringr::str_count(df_games_language$language, "\\,")) + 1
 # nmax <- max(stringr::str_count(df_games_language$Sup_languages, "\\,")) + 1
@@ -245,18 +259,9 @@ for(i in 1:nrow(df_games_language)){
     nmax_line <- i
   }
 }
-stringr::str_count(df_games_language[62736, 2], "\\,")
+## Analisando inconsistências
+# stringr::str_count(df_games_language[62736, 2], "\\,")
 
-## Corrigindo idioma de jogo problemático
-df_games[63064, ]
-
-## Kaboom! Corrigido
-df_games[62736, 10] <- "'All languages'"
-df_games_language[62736, 2] <- "'All languages'"
-
-## Cube Loop alterado
-df_games[63064, 10] <- "'All languages'"
-df_games_language[63064, 2] <- "'All languages'"
 
 df_games_language_split <- df_games_language %>%
   dplyr::select(language) |> 
