@@ -17,6 +17,8 @@ library(dtplyr)
 ## Lendo tabelas csv
 df_games <- data.table::fread("data-raw/steam-data/db-1/games.csv", sep = ',')
 
+## Manipulando dados e selecionando variáveis
 df_games_selected <- func_manip_vars(df_games, debug = F)
 
-
+## Gerando database, formato json para o mongodb
+json_df_games <- func_criar_tabela(df_games_selected, debug = T)

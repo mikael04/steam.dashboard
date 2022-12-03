@@ -12,6 +12,7 @@ library(data.table)
 library(dtplyr)
 # source("R/fct_get_colnames_df.R")
 source("R/fct_clean_names.R")
+source("R/fct_criar_tabela.R")
 
 # 1 - Funçao ----
 func_manip_vars <- function(df, debug){
@@ -51,5 +52,8 @@ func_manip_vars <- function(df, debug){
     tidyr::separate_rows(language, sep = ",") |> 
     tidyr::separate_rows(categories, sep = ",") |> 
     tidyr::separate_rows(genres, sep = ",")
+  
+  df_selected |> 
+    dplyr::select(release_year, platform, language, estimated_owners, price, categories, genres)
   
 }
