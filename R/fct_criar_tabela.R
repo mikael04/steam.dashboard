@@ -13,10 +13,11 @@ source("R/fct_get_colnames_df.R")
 func_criar_tabela <- function(tabelao, debug){
   teste_interno <- F
   if(teste_interno){
-    tabelao <- df_games_selected
+    tabelao <- df_selected
     debug <- T
   }
-  variaveis <- colnames(tabelao)[-c(1,2,3,4,5)]
+  ## preciso ordernar as variáveis
+  variaveis <- colnames(tabelao)[-c(1,2,3)]
   tabelas <- data.frame(nivel = integer(0), Release.date = character(0), language = integer(0), platform = integer(0), n = numeric(0), variavel = character(0), stringsAsFactors = F)
   
   i <- 0

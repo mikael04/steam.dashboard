@@ -400,9 +400,9 @@ summary(df_games$`Required age`)
 ### a princípio filtros que parecem interessantes:
 ### - 3.1.1 - ano de lançamento - OK - FILTRO
 ### - 3.1.1.1 - Alguma análise sobre o mês?
+### - 3.1.2 - idioma suportado ** - OK - 29 idiomas, vai ser FILTRO , pelo formato (mais de uma por categoria)
 ### - 3.1.3 - plataforma (win, mac, linux) - OK - FILTRO
 ### - 3.2.1 - categorias - OK - 36 categorias
-### - 3.1.2 - idioma suportado ** - OK - 29 idiomas, vai ser uma variável por conta do formato (mais de uma por categoria,)
 ### - 3.2.3 - gêneros - OK - 33 gêneros,  muitas categorias, será uma visualização, porém reagrupada
 ### - 3.2.4 - preço - OK - Pode ser um filtro, de $9 até $34 - recategorizar, apresentar dado
 ### - 3.2.x - idade recomendada - ANALISADA - Não há dados para criar gráficos, pouco preenchimento fora de 0
@@ -416,5 +416,6 @@ summary(df_games$`Required age`)
 ### Possivelmente usar como filtro idioma em dummys (ao invés de uma caixa de texto como está agora)
 
 #### **Variáveis com mais de uma categoria por coluna teriam muito problema de processamento
+#### Farei um teste com idioma, criando diferentes bancos para cada idioma
 #### poderia dividir em novas colunas (estilo dummy, que provavelmente aumentaria muito o tamanho do banco e o tempo de criação dele)
 #### ou fazer a contagem posterior no shiny agrupando em tempo de execução (provavelmente lento)
