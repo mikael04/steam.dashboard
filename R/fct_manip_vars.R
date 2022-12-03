@@ -11,6 +11,7 @@ library(dplyr)
 library(data.table)
 library(dtplyr)
 # source("R/fct_get_colnames_df.R")
+source("R/fct_clean_names.R")
 
 # 1 - Funçao ----
 func_manip_vars <- function(df, debug){
@@ -35,5 +36,20 @@ func_manip_vars <- function(df, debug){
   ## Ajustando as plataformas
   df_selected <- df_selected |> 
     dplyr::mutate(platform = linux*100 + mac*10 + windows)
+  
+  ## Fazendo alterações para supported_languages
+  df_selected$language <- gsub('\\[', '', df_selected$supported_languages)
+  df_selected$language <- gsub('\\]', '', df_selected$language)
+  df_selected$language <- gsub("\\'", '', df_selected$language)
+  df_selected$language <- gsub('\\"', '', df_selected$language)
+  df_selected$language <- gsub('\\ ', '', df_selected$language)
+  
+  
+  ## Separando linhas com mais de um valor (separando em linhas)
+  ## Colunas supported_languages, categories, genres
+  df_selected <- df_selected |>
+    tidyr::separate_rows(language, sep = ",") |> 
+    tidyr::separate_rows(categories, sep = ",") |> 
+    tidyr::separate_rows(genres, sep = ",")
   
 }
