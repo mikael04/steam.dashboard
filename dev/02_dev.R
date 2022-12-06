@@ -20,13 +20,16 @@ usethis::use_package( "thinkr" )
 ## Add modules ----
 ## Create a module infrastructure in R/
 golem::add_module( name = "name_of_module1" ) # Name of the module
-golem::add_module( name = "name_of_module2" ) # Name of the module
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
+golem::add_fct( "clean_names" ) 
+golem::add_fct( "criar_tabela" ) 
+golem::add_fct( "get_colnames_df" ) 
 golem::add_fct( "help_genres" ) 
 golem::add_fct( "help_dev_names" ) 
-golem::add_utils( "helpers" )
+golem::add_fct( "manip_vars" ) 
+# golem::add_utils( "helpers" )
 
 ## External resources
 ## Creates .js and .css files at inst/app/www
