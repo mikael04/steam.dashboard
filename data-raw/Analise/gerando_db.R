@@ -7,11 +7,11 @@
 
 # 0. Bibliotecas ----
 library(dplyr)
-library(data.table)
-library(dtplyr)
+# library(data.table)
+# library(dtplyr)
 
-# source("R/fct_help_genres.R")
-# source("R/fct_help_dev_names.R")
+source("R/fct_manip_vars.R")
+source("R/fct_criar_tabela.R")
 
 # 1. Dados originais
 ## Lendo tabelas csv
@@ -22,3 +22,11 @@ df_games_selected <- func_manip_vars(df_games, debug = F)
 
 ## Gerando database, formato json para o mongodb
 json_df_games <- func_criar_tabela(df_games_selected, debug = T)
+
+jsonlite::write_json(json_df_games, "data-raw/dados-manipulados/database.json")
+feather::write_feather(json_df_games, "data-raw/dados-manipulados/database.feather")
+
+## Investigando languages
+
+lang <- unique(df_games_selected$language) 
+df_lang <- as.data.frame(lang)

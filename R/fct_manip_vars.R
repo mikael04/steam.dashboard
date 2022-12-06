@@ -8,8 +8,8 @@
 
 # 0 - Scripts e bibliotecas ----
 library(dplyr)
-library(data.table)
-library(dtplyr)
+# library(data.table)
+# library(dtplyr)
 # source("R/fct_get_colnames_df.R")
 source("R/fct_clean_names.R")
 source("R/fct_criar_tabela.R")
